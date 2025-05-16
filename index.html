@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Camera Upload</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      padding: 20px;
+    }
+    video, canvas {
+      max-width: 100%;
+    }
+  </style>
+</head>
+<body>
+  <h2>📸 Prends une photo</h2>
+  <video id="camera" autoplay playsinline width="300" height="300"></video><br>
+  <button onclick="takePhoto()">📷 Capturer</button>
+  <canvas id="snapshot" style="display: none;"></canvas>
+  <p id="status"></p>
+
+  <script>
+    const video = document.getElementById('camera');
+    const canvas = document.getElementById('snapshot');
+    const statusText = document.getElementById('status');
+
+    // Remplace ces valeurs par les tiennes !
+    const CLOUD_NAME = 'dd6q5m9co'; // ex: 'dmeazr4re'
+    const UPLOAD_PRESET = 'auto_upload';
+
+    // Activer la caméra
+    navigator.mediaDevices.getUserMedia({ video: true })
+      .then(stream => {
+        video.srcObject = stream;
+      })
+      .catch(err => {
+        alert('Erreur d’accès à la caméra : ' + err);
+      });
+
+    function takePhoto() {
+      const context = canvas.getContext('2d');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      context.drawImage(video, 0, 0);
+      const imageData = canvas.toDataURL('image/jpeg');
+      uploadImage(imageData);
+    }
+
+    function uploadImage(imageData) {
+      statusText.innerText = '📤 Upload en cours...';
+      const formData = new FormData();
+      formData.append('file', imageData);
+      formData.append('upload_preset', UPLOAD_PRESET);
+
+      fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, {
+        method: 'POST',
+        body: formData
+      })
+      .then(res => res.json())
+      .then(data => {
+        console.log('Succès:', data);
+        statusText.innerHTML = `✅ Image envoyée !<br><a href="${data.secure_url}" target="_blank">Voir l’image</a>`;
+      })
+      .catch(err => {
+        console.error('Erreur :', err);
+        statusText.innerText = '❌ Erreur d’upload';
+      });
+    }
+  </script>
+</body>
+</html>
